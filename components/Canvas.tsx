@@ -22,8 +22,8 @@ export interface DrawData {
 }
 
 const dimensions = {
-	width: 700,
-	height: 500
+	width: 960,
+	height: 540
 };
 
 enum Tool {

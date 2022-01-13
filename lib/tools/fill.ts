@@ -1,8 +1,7 @@
-import { getColor, setColor, equal, RGBA, hexToRgb } from './color';
+import { hexToRgb } from './color';
 //@ts-ignore
 const wasm = await import('wasm-flood-fill');
 
-// FIXME: Not detecting correct colors
 // TODO: Replace Math.round(x * 2)
 export const FillTool = {
 	down: (
