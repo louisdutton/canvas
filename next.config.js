@@ -3,7 +3,11 @@ const nextConfig = {
 	reactStrictMode: true,
 	webpack: function (config, { isServer, dev }) {
 		// Since Webpack 5 doesn't enable WebAssembly by default, we should do it manually
-		config.experiments = { syncWebAssembly: true, topLevelAwait: true };
+		config.experiments = {
+			syncWebAssembly: true,
+			topLevelAwait: true,
+			layers: true
+		};
 
 		// In prod mode and in the server bundle (the place where this "chunks" bug
 		// appears), use the client static directory for the same .wasm bundle
