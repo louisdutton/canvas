@@ -39,7 +39,7 @@ export default function Canvas() {
 	const [drawing, setDrawing] = useState(false);
 	const [position, setPosition] = useState<[number, number]>();
 	const [color, setColor] = useState('#000000');
-	const tools = [Pen, Eraser, PaintBucket];
+	const toolIcons = [Pen, Eraser, PaintBucket];
 	const weightSlider = useRef<HTMLInputElement>(null);
 
 	const draw = useCallback(
@@ -150,11 +150,14 @@ export default function Canvas() {
 		if (!ctx) return;
 
 		switch (e.code) {
-			case 'KeyB':
+			case 'KeyD':
 				setTool(Tool.Pen);
 				break;
 			case 'KeyE':
 				setTool(Tool.Eraser);
+				break;
+			case 'KeyF':
+				setTool(Tool.Fill);
 				break;
 			case 'Backspace':
 				ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -185,7 +188,7 @@ export default function Canvas() {
 				<div className="py-3 flex flex-col sm:flex-row gap-4 items-center justify-evenly">
 					<Palette setColor={(col) => setColor(col)} />
 					<List<Icon>
-						items={tools}
+						items={toolIcons}
 						render={(Tool, i) => (
 							<IconButton onClick={() => setTool(i)} active={tool === i}>
 								<Tool size={30} weight="duotone" />
