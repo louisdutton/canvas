@@ -11,12 +11,13 @@ export const PenTool = {
 		x: number,
 		y: number
 	) => {
-		ctx.globalCompositeOperation = 'source-over';
+		// ctx.globalCompositeOperation = 'source-over';
 		ctx.strokeStyle = color;
 		ctx.lineWidth = pressure * weight;
 		ctx.beginPath();
 		ctx.moveTo(px, py);
 		ctx.lineTo(x, y);
+		// ctx.quadraticCurveTo(px, py, x, y);
 		ctx.stroke();
 	}
 };
