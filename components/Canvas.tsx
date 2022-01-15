@@ -17,6 +17,7 @@ export interface DrawData {
 	y: number;
 	tool: Tool;
 	color: string;
+	opacity: number;
 	pressure: number;
 	weight: number;
 }
@@ -44,14 +45,16 @@ export default function Canvas() {
 	const [color, setColor] = useState('#000000');
 	const toolIcons = [Pen, Eraser, PaintBucket];
 	const weightSlider = useRef<HTMLInputElement>(null);
+	const opacitySlider = useRef<HTMLInputElement>(null);
+
 	const draw = useCallback(
 		(drawData: DrawData) => {
 			if (!ctx) return;
-			const { tool, color, pressure, weight, px, py, x, y } = drawData;
+			const { tool, color, opacity, pressure, weight, px, py, x, y } = drawData;
 
 			switch (tool) {
 				case Tool.Pen:
-					PenTool.move(ctx, color, pressure, weight, px, py, x, y);
+					PenTool.move(ctx, color, opacity, pressure, weight, px, py, x, y);
 					break;
 				case Tool.Eraser:
 					EraserTool.move(ctx, px, py, x, y, weight);
@@ -65,7 +68,13 @@ export default function Canvas() {
 		const x = e.nativeEvent.offsetX;
 		const y = e.nativeEvent.offsetY;
 
-		if (!drawing || !position || !ctx || !weightSlider.current) {
+		if (
+			!drawing ||
+			!position ||
+			!ctx ||
+			!weightSlider.current ||
+			!opacitySlider.current
+		) {
 			setPosition([x, y]);
 			return;
 		}
@@ -73,8 +82,9 @@ export default function Canvas() {
 		const drawData: DrawData = {
 			tool,
 			color,
+			opacity: parseFloat(opacitySlider.current.value),
 			pressure: e.pressure,
-			weight: parseInt(weightSlider.current?.value),
+			weight: parseInt(weightSlider.current.value),
 			px: position[0],
 			py: position[1],
 			x,
@@ -88,7 +98,6 @@ export default function Canvas() {
 	};
 
 	const undo = () => {
-		if (!ctx) return;
 		console.log('Undo');
 		console.log('depth: ' + undoDepth);
 
@@ -97,12 +106,13 @@ export default function Canvas() {
 			var img = new Image();
 			img.src = history[undoDepth];
 			img.onload = function () {
-				ctx.drawImage(img, 0, 0);
+				ctx?.drawImage(img, 0, 0);
 			};
 		}
 	};
 
 	const redo = () => {
+		if (!ctx) return;
 		if (undoDepth < history.length - 1) {
 			undoDepth++;
 			var img = new Image();
@@ -113,13 +123,18 @@ export default function Canvas() {
 		}
 	};
 
-	const handlePointerUp = () => {
-		setDrawing(false);
+	const pushHistory = () => {
+		if (!ctx) return;
 		undoDepth++;
 		if (undoDepth < history.length) {
 			history.length = undoDepth;
 		}
 		history.push(ctx.canvas.toDataURL());
+	};
+
+	const handlePointerUp = () => {
+		setDrawing(false);
+		pushHistory();
 	};
 
 	const handlePointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
@@ -131,6 +146,7 @@ export default function Canvas() {
 		const y = e.nativeEvent.offsetY;
 		const pressure = e.pressure;
 		const weight = parseInt(weightSlider.current.value);
+		const opacity = parseFloat(weightSlider.current.value);
 
 		switch (tool) {
 			case Tool.Eraser:
@@ -138,7 +154,7 @@ export default function Canvas() {
 				break;
 
 			case Tool.Pen:
-				PenTool.move(ctx, color, pressure, weight, x, y, x, y);
+				PenTool.move(ctx, color, opacity, pressure, weight, x, y, x, y);
 				break;
 
 			case Tool.Fill:
@@ -161,7 +177,7 @@ export default function Canvas() {
 		canvas.width = Math.floor(dimensions.width * scale);
 		canvas.height = Math.floor(dimensions.height * scale);
 		ctx.scale(scale, scale);
-		// console.log('Canvas Scale: ' + scale);
+		console.log('Canvas Scale: ' + scale);
 
 		// fill white
 		ctx.imageSmoothingEnabled = true;
@@ -173,6 +189,9 @@ export default function Canvas() {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 
+		// set intital state
+		pushHistory();
+
 		// global pointer up event so it works outside of canvas
 		window.addEventListener('pointerup', handlePointerUp);
 
@@ -182,7 +201,7 @@ export default function Canvas() {
 	}, [draw]);
 
 	const handleKeyPress = (e: KeyboardEvent) => {
-		e.preventDefault();
+		// e.preventDefault();
 		if (!ctx) return;
 
 		switch (e.code) {
@@ -196,10 +215,10 @@ export default function Canvas() {
 				setTool(Tool.Fill);
 				break;
 			case 'KeyZ':
-				undo();
+				if (e.metaKey) undo();
 				break;
 			case 'KeyR':
-				redo();
+				if (e.metaKey) redo();
 				break;
 			case 'Backspace':
 				ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -247,6 +266,14 @@ export default function Canvas() {
 						min={10}
 						defaultValue={20}
 						ref={weightSlider}
+					/>
+					<input
+						type="range"
+						step={0.1}
+						max={1}
+						min={0}
+						defaultValue={1}
+						ref={opacitySlider}
 					/>
 				</div>
 			</div>

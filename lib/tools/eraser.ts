@@ -9,9 +9,8 @@ export const EraserTool = {
 		y: number,
 		weight: number
 	) => {
-		// ctx.globalCompositeOperation = 'destination-out'; // move this to oneshot
-
 		ctx.strokeStyle = '#ffffff';
+		ctx.globalAlpha = 1;
 		ctx.lineWidth = weight;
 		ctx.beginPath();
 		ctx.moveTo(px, py);
