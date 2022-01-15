@@ -32,6 +32,9 @@ enum Tool {
 	Fill
 }
 
+let undoDepth = -1;
+const history = new Array<string>();
+
 export default function Canvas() {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const [ctx, setCtx] = useState<CanvasRenderingContext2D>();
@@ -41,7 +44,6 @@ export default function Canvas() {
 	const [color, setColor] = useState('#000000');
 	const toolIcons = [Pen, Eraser, PaintBucket];
 	const weightSlider = useRef<HTMLInputElement>(null);
-
 	const draw = useCallback(
 		(drawData: DrawData) => {
 			if (!ctx) return;
@@ -85,7 +87,41 @@ export default function Canvas() {
 		setPosition([x, y]);
 	};
 
-	const handlePointerUp = () => setDrawing(false);
+	const undo = () => {
+		if (!ctx) return;
+		console.log('Undo');
+		console.log('depth: ' + undoDepth);
+
+		if (undoDepth > 0) {
+			undoDepth--;
+			var img = new Image();
+			img.src = history[undoDepth];
+			img.onload = function () {
+				ctx.drawImage(img, 0, 0);
+			};
+		}
+	};
+
+	const redo = () => {
+		if (undoDepth < history.length - 1) {
+			undoDepth++;
+			var img = new Image();
+			img.src = history[undoDepth];
+			img.onload = function () {
+				ctx.drawImage(img, 0, 0);
+			};
+		}
+	};
+
+	const handlePointerUp = () => {
+		setDrawing(false);
+		undoDepth++;
+		if (undoDepth < history.length) {
+			history.length = undoDepth;
+		}
+		history.push(ctx.canvas.toDataURL());
+	};
+
 	const handlePointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
 		setDrawing(true);
 
@@ -125,10 +161,10 @@ export default function Canvas() {
 		canvas.width = Math.floor(dimensions.width * scale);
 		canvas.height = Math.floor(dimensions.height * scale);
 		ctx.scale(scale, scale);
-		console.log('Canvas Scale: ' + scale);
+		// console.log('Canvas Scale: ' + scale);
 
 		// fill white
-		// ctx.imageSmoothingEnabled = true;
+		ctx.imageSmoothingEnabled = true;
 		ctx.fillStyle = '#ffffff';
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -159,6 +195,12 @@ export default function Canvas() {
 			case 'KeyF':
 				setTool(Tool.Fill);
 				break;
+			case 'KeyZ':
+				undo();
+				break;
+			case 'KeyR':
+				redo();
+				break;
 			case 'Backspace':
 				ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 				break;
@@ -178,10 +220,10 @@ export default function Canvas() {
 		<div className="sm:rounded-xl overflow-hidden shadow-xl flex flex-col dark:border border-neutral-700 touch-none">
 			<canvas
 				ref={ref}
-				className="!border-b-0 cursor-cell bg-white"
+				className="bg-white"
 				onPointerMove={(e) => handlePointerMove(e)}
 				onPointerDown={(e) => handlePointerDown(e)}
-				// onBlur={(e) => setDrawing(false)}
+				onBlur={(e) => setDrawing(false)}
 				// onKeyDown={(e) => handleKeyDown(e)}
 			/>
 			<div className="z-50 flex flex-col bg-neutral-100 dark:bg-neutral-800">
