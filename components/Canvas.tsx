@@ -3,227 +3,37 @@ import Palette from './Palette';
 import List from './List';
 import IconButton from './IconButton';
 import { PenTool, EraserTool, FillTool } from '../lib/tools';
+import { DrawData, Tool } from '../lib/ink';
 import { Pen, Eraser, PaintBucket, Rectangle, IconProps } from 'phosphor-react';
+import History from '../lib/history';
 
 type Icon = React.ForwardRefExoticComponent<
 	IconProps & React.RefAttributes<SVGSVGElement>
 >;
 
-export interface DrawData {
-	roomId: string;
-	px: number;
-	py: number;
-	x: number;
-	y: number;
-	tool: Tool;
-	color: string;
-	opacity: number;
-	pressure: number;
-	weight: number;
-}
-
-const dimensions = {
-	width: 960,
-	height: 540
-};
-
-enum Tool {
-	Pen,
-	Eraser,
-	Fill
-}
-
-let undoDepth = -1;
-const history = new Array<string>();
+const history = new History();
 
 export default function Canvas() {
 	const ref = useRef<HTMLCanvasElement>(null);
-	const [ctx, setCtx] = useState<CanvasRenderingContext2D>();
 	const [tool, setTool] = useState<Tool>(Tool.Pen);
-	const [drawing, setDrawing] = useState(false);
-	const [position, setPosition] = useState<[number, number]>();
-	const [color, setColor] = useState('#000000');
 	const toolIcons = [Pen, Eraser, PaintBucket];
 	const weightSlider = useRef<HTMLInputElement>(null);
 	const opacitySlider = useRef<HTMLInputElement>(null);
 
-	const draw = useCallback(
-		(drawData: DrawData) => {
-			if (!ctx) return;
-			const { tool, color, opacity, pressure, weight, px, py, x, y } = drawData;
-
-			switch (tool) {
-				case Tool.Pen:
-					PenTool.move(ctx, color, opacity, pressure, weight, px, py, x, y);
-					break;
-				case Tool.Eraser:
-					EraserTool.move(ctx, px, py, x, y, weight);
-					break;
-			}
-		},
-		[ctx]
-	);
-
-	const handlePointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
-		const x = e.nativeEvent.offsetX;
-		const y = e.nativeEvent.offsetY;
-
-		if (
-			!drawing ||
-			!position ||
-			!ctx ||
-			!weightSlider.current ||
-			!opacitySlider.current
-		) {
-			setPosition([x, y]);
-			return;
-		}
-
-		const drawData: DrawData = {
-			tool,
-			color,
-			opacity: parseFloat(opacitySlider.current.value),
-			pressure: e.pressure,
-			weight: parseInt(weightSlider.current.value),
-			px: position[0],
-			py: position[1],
-			x,
-			y,
-			roomId: ''
-		};
-
-		// draw locally
-		draw(drawData);
-		setPosition([x, y]);
-	};
-
-	const undo = () => {
-		console.log('Undo');
-		console.log('depth: ' + undoDepth);
-
-		if (undoDepth > 0) {
-			undoDepth--;
-			var img = new Image();
-			img.src = history[undoDepth];
-			img.onload = function () {
-				ctx?.drawImage(img, 0, 0);
-			};
-		}
-	};
-
-	const redo = () => {
-		if (!ctx) return;
-		if (undoDepth < history.length - 1) {
-			undoDepth++;
-			var img = new Image();
-			img.src = history[undoDepth];
-			img.onload = function () {
-				ctx.drawImage(img, 0, 0);
-			};
-		}
-	};
-
-	const pushHistory = () => {
-		if (!ctx) return;
-		undoDepth++;
-		if (undoDepth < history.length) {
-			history.length = undoDepth;
-		}
-		history.push(ctx.canvas.toDataURL());
-	};
-
-	const handlePointerUp = () => {
-		setDrawing(false);
-		pushHistory();
-	};
-
-	const handlePointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
-		setDrawing(true);
-
-		if (!ctx || !weightSlider.current) return;
-
-		const x = e.nativeEvent.offsetX;
-		const y = e.nativeEvent.offsetY;
-		const pressure = e.pressure;
-		const weight = parseInt(weightSlider.current.value);
-		const opacity = parseFloat(weightSlider.current.value);
-
-		switch (tool) {
-			case Tool.Eraser:
-				EraserTool.move(ctx, x, y, x, y, weight);
-				break;
-
-			case Tool.Pen:
-				PenTool.move(ctx, color, opacity, pressure, weight, x, y, x, y);
-				break;
-
-			case Tool.Fill:
-				FillTool.down(ctx, x, y, color, window.devicePixelRatio);
-				break;
-		}
-	};
-
 	useEffect(() => {
 		if (!ref.current) return;
+	}, [ref.current]);
 
-		const canvas = ref.current;
-		const ctx = canvas.getContext('2d')!;
-		setCtx(ctx); // async
-
-		canvas.style.height = dimensions.height + 'px';
-		canvas.style.width = dimensions.width + 'px';
-
-		const scale = window.devicePixelRatio;
-		canvas.width = Math.floor(dimensions.width * scale);
-		canvas.height = Math.floor(dimensions.height * scale);
-		ctx.scale(scale, scale);
-		console.log('Canvas Scale: ' + scale);
-
-		// fill white
-		ctx.imageSmoothingEnabled = true;
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-		// stroke style
-		ctx.lineWidth = 5;
-		ctx.lineCap = 'round';
-		ctx.lineJoin = 'round';
-
-		// set intital state
-		pushHistory();
-
-		// global pointer up event so it works outside of canvas
-		window.addEventListener('pointerup', handlePointerUp);
-
-		return () => {
-			window.removeEventListener('pointerup', handlePointerUp);
-		};
-	}, [draw]);
+	const keyBindings: Record<string, () => void> = {
+		KeyD: () => setTool(Tool.Pen),
+		KeyE: () => setTool(Tool.Eraser),
+		KeyF: () => setTool(Tool.Fill)
+	};
 
 	const handleKeyPress = (e: KeyboardEvent) => {
 		// e.preventDefault();
-		if (!ctx) return;
-
-		switch (e.code) {
-			case 'KeyD':
-				setTool(Tool.Pen);
-				break;
-			case 'KeyE':
-				setTool(Tool.Eraser);
-				break;
-			case 'KeyF':
-				setTool(Tool.Fill);
-				break;
-			case 'KeyZ':
-				if (e.metaKey) undo();
-				break;
-			case 'KeyR':
-				if (e.metaKey) redo();
-				break;
-			case 'Backspace':
-				ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-				break;
-		}
+		const binding = keyBindings[e.code];
+		if (binding) binding();
 	};
 
 	// key bindings
@@ -242,7 +52,7 @@ export default function Canvas() {
 				className="bg-white"
 				onPointerMove={(e) => handlePointerMove(e)}
 				onPointerDown={(e) => handlePointerDown(e)}
-				onBlur={(e) => setDrawing(false)}
+				onBlur={(e) => handlePointerUp()}
 				// onKeyDown={(e) => handleKeyDown(e)}
 			/>
 			<div className="z-50 flex flex-col bg-neutral-100 dark:bg-neutral-800">

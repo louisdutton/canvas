@@ -3,6 +3,7 @@ export const PenTool = {
 	up: () => {},
 	move: (
 		ctx: CanvasRenderingContext2D,
+		path: Path2D,
 		color: string,
 		opacity: number,
 		pressure: number,
@@ -17,9 +18,8 @@ export const PenTool = {
 		ctx.globalAlpha = opacity;
 		ctx.lineWidth = pressure * weight;
 		ctx.beginPath();
-		ctx.moveTo(px, py);
-		ctx.lineTo(x, y);
-		// ctx.quadraticCurveTo(px, py, x, y);
-		ctx.stroke();
+		path.moveTo(px, py);
+		path.lineTo(x, y);
+		ctx.stroke(path);
 	}
 };
