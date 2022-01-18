@@ -27,12 +27,18 @@ interface Position {
 // 	height: number;
 // }
 
+let drawing: boolean;
+let px: number;
+let py: number;
+let pw: number; // prev weight
+let path: Path2D;
+
 const useCanvas = (width: number, height: number) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [ctx, setCtx] = useState<CanvasRenderingContext2D>();
-	const [drawing, setDrawing] = useState(false);
-	const [path, setPath] = useState<Path2D>();
-	const [prevPosition, setPrevPosition] = useState<Position>({ x: -1, y: -1 });
+	// const [drawing, setDrawing] = useState<boolean>(false);
+	// const [path, setPath] = useState<Path2D>();
+	// const [prevPosition, setPrevPosition] = useState<Position>({ x: -1, y: -1 });
 	const [opacity, setOpacity] = useState(1.0);
 	const [weight, setWeight] = useState(10);
 	const [history, setHistory] = useState<History>();
@@ -40,43 +46,44 @@ const useCanvas = (width: number, height: number) => {
 	const [color, setColor] = useState('#000000');
 
 	const draw = ({ pressure, px, py, x, y }: DrawData) => {
+		console.log(ctx, weight, path);
 		if (!ctx || !weight || !path) return;
 
 		// eraser or pen
 		if (tool < 2) {
+			// line width
+			const lineWidth = pressure * weight;
+			ctx.lineWidth = pw + lineWidth / 2; // avg
+			pw = lineWidth;
+
 			ctx.strokeStyle = tool === 0 ? color : '#ffffff';
 			ctx.globalAlpha = opacity;
-			ctx.lineWidth = pressure * weight;
-			ctx.beginPath();
-			// path.moveTo(px, py);
-			// path.lineTo(x, y);
-			// ctx.stroke(path);
-			ctx.moveTo(px, py);
-			ctx.lineTo(x, y);
-			ctx.stroke();
+			path.quadraticCurveTo(px, py, px + (x - px) / 2, py + (y - py) / 2);
+			ctx.stroke(path);
 		}
 	};
 
-	const onup = () => {
-		console.log('up');
-		setDrawing(false);
+	const onup = (e?: PointerEvent) => {
+		e?.preventDefault();
+		// if (drawing) setDrawing(false);
+		drawing = false;
 		path?.closePath();
 		history?.push();
 	};
 
 	const ondown = (e: PointerEvent) => {
-		console.log('down');
+		e.preventDefault();
 
-		setDrawing(true);
+		// if (!drawing) setDrawing(true);
+		drawing = true;
 
 		const x = e.offsetX;
 		const y = e.offsetY;
 		const pressure = e.pressure;
 
 		// create new path
-		const path = new Path2D();
+		path = new Path2D();
 		path.moveTo(x, y);
-		setPath(path);
 
 		if (tool < 2) {
 			draw({ roomId: '', pressure, x, y, px: x, py: y });
@@ -86,27 +93,31 @@ const useCanvas = (width: number, height: number) => {
 	};
 
 	const onmove = (e: PointerEvent) => {
-		console.log('move');
+		e.preventDefault();
 
 		const x = e.offsetX;
 		const y = e.offsetY;
 
 		if (!drawing) {
-			setPrevPosition({ x, y });
+			px = x;
+			py = y;
 			return;
 		}
+
+		console.log('drawing');
 
 		// draw locally
 		draw({
 			roomId: '',
 			pressure: e.pressure,
-			px: prevPosition.x,
-			py: prevPosition.y,
+			px,
+			py,
 			x,
 			y
 		});
 
-		setPrevPosition({ x, y });
+		px = x;
+		py = y;
 	};
 
 	useEffect(() => {
@@ -126,8 +137,9 @@ const useCanvas = (width: number, height: number) => {
 		ctx.scale(scale, scale);
 		// console.log('Canvas Scale: ' + scale);
 
-		// fill white
 		ctx.imageSmoothingEnabled = true;
+
+		// fill white
 		ctx.fillStyle = '#ffffff';
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -140,24 +152,24 @@ const useCanvas = (width: number, height: number) => {
 		window.addEventListener('pointerup', onup);
 		canvas.addEventListener('pointerdown', ondown);
 		canvas.addEventListener('pointermove', onmove);
-		canvas.addEventListener('blur', onup);
+		canvas.addEventListener('blur', () => onup());
 
 		// init history
 		const history = new History(ctx);
 		history.push(); // push intial state
 
-		setHistory(history);
 		setCtx(ctx);
+		setHistory(history);
 
 		return () => {
 			window.removeEventListener('pointerup', onup);
 			canvas.removeEventListener('pointerdown', ondown);
 			canvas.removeEventListener('pointermove', onmove);
-			canvas.removeEventListener('blur', onup);
+			canvas.removeEventListener('blur', () => onup());
 		};
-	}, []);
+	}, [canvasRef.current]);
 
-	return canvasRef;
+	return { canvasRef, tool, setColor, setOpacity, setTool, setWeight };
 };
 
 export default useCanvas;

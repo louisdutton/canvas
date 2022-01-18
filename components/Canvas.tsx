@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, PointerEvent, useCallback } from 'react';
+import { setColor } from '../lib/tools/color';
 import useCanvas, { DrawData, Tool } from '../lib/useCanvas';
 import Toolbar from './Toolbar';
 
 export default function Canvas() {
-	const ref = useCanvas(960, 540);
+	const { canvasRef, tool, setColor, setOpacity, setTool, setWeight } =
+		useCanvas(960, 540);
 	// const [tool, setTool] = useState<Tool>(Tool.Pen);
 
 	// const keyBindings: Record<string, () => void> = {
@@ -36,14 +38,17 @@ export default function Canvas() {
 
 	return (
 		<>
-			<canvas ref={ref} className="bg-white rounded-lg shadow-lg" />
-			{/* <Toolbar
-				setColor={(value) => (ink.color = value)}
-				setOpacity={(value) => (ink.opacity = value)}
-				setWeight={(value) => (ink.weight = value)}
+			<canvas
+				ref={canvasRef}
+				className="bg-white rounded-lg shadow-lg touch-none"
+			/>
+			<Toolbar
+				setColor={setColor}
+				setOpacity={setOpacity}
+				setWeight={setWeight}
 				setTool={setTool}
 				activeTool={tool}
-			/> */}
+			/>
 		</>
 	);
 }
