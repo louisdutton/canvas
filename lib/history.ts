@@ -26,7 +26,7 @@ export default class History {
 			const img = new Image();
 			img.src = this.states[this.depth];
 			img.onload = () => {
-				ctx.drawImage(img, 0, 0);
+				this.ctx.drawImage(img, 0, 0);
 			};
 		}
 	}

@@ -50,7 +50,7 @@ export default function Palette({ setColor }: Props) {
 	return (
 		<ul className="flex gap-1.5">
 			{TAILWIND_COLORS.map((color, i) => (
-				<li key={color}>
+				<li key={color} className="flex">
 					<ColorButton
 						color={color}
 						onClick={() => handleClick(i)}
