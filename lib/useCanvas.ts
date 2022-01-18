@@ -2,8 +2,33 @@ import { useEffect, useRef, useState } from 'react';
 import History from './history';
 import { PenTool, EraserTool } from './tools';
 
+export enum Color {
+	black,
+	red,
+	orange,
+	yellow,
+	green,
+	blue,
+	purple,
+	pink,
+	white
+}
+
+const COLORS = [
+	'#000000',
+	'#ef4444',
+	'#f97316',
+	'#eab308',
+	'#22c55e',
+	'#3b82f6',
+	'#a855f7',
+	'#ec4899',
+	'#ffffff'
+];
+
 export enum Tool {
 	Pen,
+	Brush,
 	Eraser,
 	Fill,
 	Pipette
@@ -38,8 +63,8 @@ let tool = Tool.Pen;
 let weight = 10;
 let opacity = 1.0;
 
-const setColor = (value: string) => {
-	color = value;
+const setColor = (value: Color) => {
+	color = COLORS[value];
 };
 
 const setTool = (value: Tool) => {
@@ -68,13 +93,13 @@ const useCanvas = (width: number, height: number) => {
 		if (!ctx || !weight || !path) return;
 
 		// eraser or pen
-		if (tool < 2) {
+		if (tool < 3) {
 			// line width
 			const lineWidth = pressure * weight;
 			ctx.lineWidth = pw + lineWidth / 2; // avg
 			pw = lineWidth;
 
-			ctx.strokeStyle = tool === 0 ? color : '#ffffff';
+			ctx.strokeStyle = tool === Tool.Eraser ? '#ffffff' : color;
 			ctx.globalAlpha = opacity;
 			path.quadraticCurveTo(px, py, px + (x - px) / 2, py + (y - py) / 2);
 			ctx.stroke(path);
@@ -82,7 +107,7 @@ const useCanvas = (width: number, height: number) => {
 	};
 
 	const onup = (e?: PointerEvent) => {
-		e?.preventDefault();
+		// e?.preventDefault();
 
 		drawing = false;
 		path?.closePath();
@@ -90,7 +115,7 @@ const useCanvas = (width: number, height: number) => {
 	};
 
 	const ondown = (e: PointerEvent) => {
-		e.preventDefault();
+		// e.preventDefault();
 
 		drawing = true;
 
@@ -100,7 +125,7 @@ const useCanvas = (width: number, height: number) => {
 
 		// create new path
 		path = new Path2D();
-		path.moveTo(x, y);
+		// path.moveTo(x, y);
 
 		if (tool < 2) {
 			draw({ roomId: '', pressure, x, y, px: x, py: y });
@@ -110,7 +135,7 @@ const useCanvas = (width: number, height: number) => {
 	};
 
 	const onmove = (e: PointerEvent) => {
-		e.preventDefault();
+		// e.preventDefault();
 
 		const x = e.offsetX;
 		const y = e.offsetY;
@@ -187,7 +212,7 @@ const useCanvas = (width: number, height: number) => {
 		};
 	}, [canvasRef.current]);
 
-	return { canvasRef, tool, setColor, setOpacity, setTool, setWeight };
+	return { canvasRef, tool, weight, setColor, setOpacity, setTool, setWeight };
 };
 
 export default useCanvas;

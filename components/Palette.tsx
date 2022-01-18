@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Color } from '../lib/useCanvas';
 
 const TAILWIND_COLORS = [
 	'bg-black',
@@ -12,39 +13,15 @@ const TAILWIND_COLORS = [
 	'bg-white'
 ];
 
-const COLORS = [
-	'#000000',
-	'#ef4444',
-	'#f97316',
-	'#eab308',
-	'#22c55e',
-	'#3b82f6',
-	'#a855f7',
-	'#ec4899',
-	'#ffffff'
-];
-
-export enum Color {
-	black,
-	red,
-	orange,
-	yellow,
-	green,
-	blue,
-	purple,
-	pink,
-	white
-}
-
 type Props = {
-	setColor: (color: string) => void;
+	setColor: (value: Color) => void;
 };
 
 export default function Palette({ setColor }: Props) {
-	const [active, setActive] = useState<number>(0);
+	const [active, setActive] = useState<Color>(Color.black);
 	const handleClick = (index: number) => {
-		setActive(index);
-		setColor(COLORS[index]);
+		setActive(index); // TODO: make active color come from one variable only
+		setColor(index);
 	};
 
 	return (
