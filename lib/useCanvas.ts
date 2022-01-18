@@ -5,7 +5,8 @@ import { PenTool, EraserTool } from './tools';
 export enum Tool {
 	Pen,
 	Eraser,
-	Fill
+	Fill,
+	Pipette
 }
 
 export interface DrawData {
@@ -32,6 +33,26 @@ let px: number;
 let py: number;
 let pw: number; // prev weight
 let path: Path2D;
+let color = '#000000';
+let tool = Tool.Pen;
+let weight = 10;
+let opacity = 1.0;
+
+const setColor = (value: string) => {
+	color = value;
+};
+
+const setTool = (value: Tool) => {
+	tool = value;
+};
+
+const setWeight = (value: number) => {
+	weight = value;
+};
+
+const setOpacity = (value: number) => {
+	opacity = value;
+};
 
 const useCanvas = (width: number, height: number) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,14 +60,11 @@ const useCanvas = (width: number, height: number) => {
 	// const [drawing, setDrawing] = useState<boolean>(false);
 	// const [path, setPath] = useState<Path2D>();
 	// const [prevPosition, setPrevPosition] = useState<Position>({ x: -1, y: -1 });
-	const [opacity, setOpacity] = useState(1.0);
-	const [weight, setWeight] = useState(10);
+	// const [opacity, setOpacity] = useState(1.0);
+	// const [weight, setWeight] = useState(10);
 	const [history, setHistory] = useState<History>();
-	const [tool, setTool] = useState<Tool>(Tool.Pen);
-	const [color, setColor] = useState('#000000');
 
 	const draw = ({ pressure, px, py, x, y }: DrawData) => {
-		console.log(ctx, weight, path);
 		if (!ctx || !weight || !path) return;
 
 		// eraser or pen
@@ -65,7 +83,7 @@ const useCanvas = (width: number, height: number) => {
 
 	const onup = (e?: PointerEvent) => {
 		e?.preventDefault();
-		// if (drawing) setDrawing(false);
+
 		drawing = false;
 		path?.closePath();
 		history?.push();
@@ -74,7 +92,6 @@ const useCanvas = (width: number, height: number) => {
 	const ondown = (e: PointerEvent) => {
 		e.preventDefault();
 
-		// if (!drawing) setDrawing(true);
 		drawing = true;
 
 		const x = e.offsetX;
@@ -104,8 +121,6 @@ const useCanvas = (width: number, height: number) => {
 			return;
 		}
 
-		console.log('drawing');
-
 		// draw locally
 		draw({
 			roomId: '',
@@ -121,8 +136,6 @@ const useCanvas = (width: number, height: number) => {
 	};
 
 	useEffect(() => {
-		console.log('test');
-
 		const canvas = canvasRef.current;
 		if (!canvas) throw new Error('Canvas is undefined');
 
@@ -135,7 +148,6 @@ const useCanvas = (width: number, height: number) => {
 		canvas.width = Math.floor(width * scale);
 		canvas.height = Math.floor(height * scale);
 		ctx.scale(scale, scale);
-		// console.log('Canvas Scale: ' + scale);
 
 		ctx.imageSmoothingEnabled = true;
 
@@ -148,18 +160,24 @@ const useCanvas = (width: number, height: number) => {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 
-		// global pointer up event so it works outside of canvas
-		window.addEventListener('pointerup', onup);
-		canvas.addEventListener('pointerdown', ondown);
-		canvas.addEventListener('pointermove', onmove);
-		canvas.addEventListener('blur', () => onup());
-
 		// init history
 		const history = new History(ctx);
 		history.push(); // push intial state
 
 		setCtx(ctx);
 		setHistory(history);
+	}, [canvasRef.current]);
+
+	// event effect
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) throw new Error('Canvas is undefined');
+
+		// global pointer up event so it works outside of canvas
+		window.addEventListener('pointerup', onup);
+		canvas.addEventListener('pointerdown', ondown);
+		canvas.addEventListener('pointermove', onmove);
+		canvas.addEventListener('blur', () => onup());
 
 		return () => {
 			window.removeEventListener('pointerup', onup);

@@ -73,7 +73,7 @@ function ColorButton({ color, active = false, onClick }: ColorButtonProps) {
 	return (
 		<button
 			onClick={() => onClick()}
-			className={`w-10 h-10 rounded shadow cursor-pointer transition-all ${color} ${activeStyle}`}
+			className={`w-10 h-10 rounded shadow-inner shadow-neutral-400 cursor-pointer transition-all ${color} ${activeStyle}`}
 		/>
 	);
 }

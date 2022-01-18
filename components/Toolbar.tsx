@@ -4,7 +4,8 @@ import IconButton from './IconButton';
 import { PenTool, EraserTool, FillTool } from '../lib/tools';
 import { Tool } from '../lib/useCanvas';
 // import { Pen, Eraser, PaintBucket, Rectangle, IconProps } from 'phosphor-react';
-import { FaPen, FaEraser, FaPaintBrush, FaFillDrip } from 'react-icons/fa';
+import { TiPen, TiBrush, TiPipette } from 'react-icons/ti';
+import { BiEraser, BiDroplet } from 'react-icons/bi';
 import { IconType } from 'react-icons';
 
 interface Props {
@@ -23,7 +24,7 @@ const Toolbar = ({
 	activeTool
 }: Props) => {
 	// const [tool, setTool] = useState<Tool>(Tool.Pen);
-	const toolIcons = [FaPen, FaEraser, FaFillDrip];
+	const toolIcons = [TiPen, BiEraser, BiDroplet, TiPipette];
 
 	return (
 		<div className="z-50 bg-neutral-100 dark:bg-neutral-800 absolute bottom-0 left-0 w-screen">

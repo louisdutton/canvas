@@ -8,33 +8,27 @@ export default function Canvas() {
 		useCanvas(960, 540);
 	// const [tool, setTool] = useState<Tool>(Tool.Pen);
 
-	// const keyBindings: Record<string, () => void> = {
-	// 	KeyD: () => setTool(Tool.Pen),
-	// 	KeyE: () => setTool(Tool.Eraser),
-	// 	KeyF: () => setTool(Tool.Fill)
-	// };
+	const keyBindings: Record<string, () => void> = {
+		KeyD: () => setTool(Tool.Pen),
+		KeyE: () => setTool(Tool.Eraser),
+		KeyF: () => setTool(Tool.Fill)
+	};
 
-	// const handleKeyPress = (e: KeyboardEvent) => {
-	// 	// e.preventDefault();
-	// 	const binding = keyBindings[e.code];
-	// 	if (binding) binding();
-	// };
+	const handleKeyPress = (e: KeyboardEvent) => {
+		// e.preventDefault();
+		const binding = keyBindings[e.code];
+		if (binding) binding();
+	};
 
 	// key bindings
-	// useEffect(() => {
-	// 	if (!ref.current) return;
+	useEffect(() => {
+		// Event subscriptions
+		window.addEventListener('keydown', handleKeyPress);
 
-	// 	const canvas = document.createElement('canvas');
-	// 	// console.log(ink);
-
-	// 	ref.current.replaceWith(canvas);
-	// 	// Event subscriptions
-	// 	window.addEventListener('keydown', handleKeyPress);
-
-	// 	return () => {
-	// 		window.removeEventListener('keydown', handleKeyPress);
-	// 	};
-	// }, []);
+		return () => {
+			window.removeEventListener('keydown', handleKeyPress);
+		};
+	}, []);
 
 	return (
 		<>
